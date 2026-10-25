@@ -1,0 +1,253 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String        @id @default(uuid())
+  name         String
+  mobile       String        @unique
+  email        String        @unique
+  role         String        @default("BUYER") // BUYER, SELLER, BROKER, BUILDER, ADMIN
+  isVerified   Boolean       @default(false)
+  avatarUrl    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  properties   Property[]    @relation("UserProperties")
+  inquiries    Inquiry[]     @relation("UserInquiries")
+  buyerDeals   Deal[]        @relation("BuyerDeals")
+  sellerDeals  Deal[]        @relation("SellerDeals")
+  brokerDeals  Deal[]        @relation("BrokerDeals")
+  kycDocuments KycDocument[] @relation("UserKyc")
+  favorites    Favorite[]
+  savedSearches SavedSearch[]
+  chatSessions ChatSession[]
+  auditLogs    AuditLog[]
+}
+
+model OtpToken {
+  id         String    @id @default(uuid())
+  target     String    // mobile number or email
+  codeHash   String    // SHA-256 hash with salt
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([target])
+}
+
+model Property {
+  id                          String            @id @default(uuid())
+  title                       String
+  description                 String
+  propertyType                String            // PLOT, FLAT, BUNGALOW, VILLA
+  listingType                 String            @default("SALE") // SALE, RENT
+  bhk                         Float?            // 1, 2, 3, 3.5, 4
+  areaSqFt                    Float
+  areaOriginal                Float
+  areaUnit                    String            @default("SQFT") // SQFT, SQM, ACRE, GUNTHA
+  priceTotal                  Float
+  pricePerSqFt                Float
+  city                        String            // Nagpur, Wardha
+  locality                    String            // Ramdaspeth, Civil Lines, etc.
+  address                     String
+  latitude                    Float
+  longitude                   Float
+  status                      String            @default("PUBLISHED") // DRAFT, PUBLISHED, UNDER_OFFER, SOLD, RENTED
+  moderationStatus            String            @default("APPROVED") // APPROVED, PENDING, REJECTED
+  ownerId                     String
+  ownerRole                   String            // SELLER, BROKER, BUILDER
+  contactPhone                String
+  hidePhoneUntilLogin         Boolean           @default(true)
+  hideSelectedImagesUntilLogin Boolean          @default(false)
+  notes                       String?
+  availability                String            @default("IMMEDIATE") // IMMEDIATE, WITHIN_30_DAYS, UNDER_CONSTRUCTION
+  furnishing                  String            @default("UNFURNISHED") // UNFURNISHED, SEMI_FURNISHED, FULLY_FURNISHED
+  viewsCount                  Int               @default(0)
+  inquiriesCount              Int               @default(0)
+  createdAt                   DateTime          @default(now())
+  updatedAt                   DateTime          @updatedAt
+
+  owner                       User              @relation("UserProperties", fields: [ownerId], references: [id], onDelete: Cascade)
+  media                       PropertyMedia[]
+  amenities                   PropertyAmenity[]
+  inquiries                   Inquiry[]
+  deals                       Deal[]
+  favorites                   Favorite[]
+  chatSessions                ChatSession[]
+
+  @@index([city, locality])
+  @@index([propertyType, listingType])
+  @@index([priceTotal])
+  @@index([ownerRole])
+}
+
+model PropertyMedia {
+  id           String   @id @default(uuid())
+  propertyId   String
+  url          String
+  mediaType    String   @default("IMAGE") // IMAGE, VIDEO, FLOORPLAN
+  isLocked     Boolean  @default(false)   // Hidden for guests if gating enabled
+  displayOrder Int      @default(0)
+  caption      String?
+  createdAt    DateTime @default(now())
+
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+}
+
+model PropertyAmenity {
+  id         String   @id @default(uuid())
+  propertyId String
+  name       String
+  category   String   @default("GENERAL") // GENERAL, SECURITY, LEISURE, ECO
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+}
+
+model Inquiry {
+  id         String   @id @default(uuid())
+  propertyId String
+  buyerId    String?
+  name       String
+  mobile     String
+  email      String
+  message    String
+  status     String   @default("PENDING") // PENDING, CONTACTED, CLOSED
+  createdAt  DateTime @default(now())
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  buyer      User?    @relation("UserInquiries", fields: [buyerId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId])
+  @@index([status])
+}
+
+model Deal {
+  id           String        @id @default(uuid())
+  propertyId   String
+  buyerId      String
+  sellerId     String
+  brokerId     String?
+  stage        String        @default("INQUIRY") // INQUIRY, NEGOTIATION, AGREEMENT, CLOSED, CANCELLED
+  agreedPrice  Float?
+  closedAt     DateTime?
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  buyer        User          @relation("BuyerDeals", fields: [buyerId], references: [id], onDelete: Restrict)
+  seller       User          @relation("SellerDeals", fields: [sellerId], references: [id], onDelete: Restrict)
+  broker       User?         @relation("BrokerDeals", fields: [brokerId], references: [id], onDelete: SetNull)
+  kycDocuments KycDocument[]
+
+  @@index([stage])
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+model KycDocument {
+  id                 String    @id @default(uuid())
+  dealId             String
+  userId             String
+  docType            String    // AADHAAR, PAN
+  encryptedDocNumber String    // AES-256-GCM cipher:iv:tag
+  maskedNumber       String    // XXXX-XXXX-1234 or ABCDE****F
+  encryptedDocPath   String?
+  verifiedBy         String?
+  verifiedAt         DateTime?
+  createdAt          DateTime  @default(now())
+
+  deal               Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  user               User      @relation("UserKyc", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+  @@index([userId])
+}
+
+model ChatSession {
+  id         String        @id @default(uuid())
+  userId     String?
+  propertyId String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  user       User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  property   Property?     @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  messages   ChatMessage[]
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  sessionId String
+  sender    String      // USER, ASSISTANT, BROKER
+  text      String
+  metadata  String?     // JSON metadata
+  createdAt DateTime    @default(now())
+
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  userId     String
+  propertyId String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+}
+
+model SavedSearch {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  queryParams String   // JSON string
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Lender {
+  id                   String  @id
+  name                 String
+  logoUrl              String
+  baseRate             Float
+  minTenureYears       Int
+  maxTenureYears       Int
+  maxLtvPercent        Float
+  processingFeePercent Float
+  isActive             Boolean @default(true)
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?
+  action       String   // KYC_VIEW, ROLE_SWITCH, DEAL_CLOSE, DATA_EXPORT
+  targetEntity String
+  targetId     String?
+  ipAddress    String?
+  userAgent    String?
+  details      String?  // JSON string
+  createdAt    DateTime @default(now())
+
+  actor        User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([actorId])
+  @@index([createdAt])
+}

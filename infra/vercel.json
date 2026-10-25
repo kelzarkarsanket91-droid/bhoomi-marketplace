@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build --workspace=packages/finance && npm run build --workspace=apps/web",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://bhoomi-api.up.railway.app/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

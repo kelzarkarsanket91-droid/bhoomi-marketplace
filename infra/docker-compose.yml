@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bhoomi_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: bhoomi_secure_password_2026
+      POSTGRES_DB: bhoomi_marketplace
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: bhoomi_api
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:bhoomi_secure_password_2026@postgres:5432/bhoomi_marketplace?schema=public
+      JWT_SECRET: bhoomi_super_secret_jwt_access_key_2026_nagpur_wardha
+      JWT_REFRESH_SECRET: bhoomi_super_secret_jwt_refresh_key_2026_nagpur_wardha
+      ENCRYPTION_KEY: a7f8e32c91b54d6023e4f7192837465a1029384756abcdef1234567890abcdef
+      OTP_PROVIDER: console
+      CORS_ORIGIN: '*'
+    ports:
+      - '4000:4000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.web
+    container_name: bhoomi_web
+    restart: always
+    ports:
+      - '3000:80'
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

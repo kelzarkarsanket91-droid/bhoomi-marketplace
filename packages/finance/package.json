@@ -1,0 +1,19 @@
+{
+  "name": "@bhoomi/finance",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Pluggable and mergeable real estate finance engine: EMI, amortization, LTV, tax estimates, and partner bank integrations",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test tests/*.test.js || tsx --test tests/*.test.ts"
+  },
+  "keywords": ["real-estate", "emi", "mortgage", "finance", "amortization", "bhoomi"],
+  "author": "Bhoomi Realty Engineering",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
