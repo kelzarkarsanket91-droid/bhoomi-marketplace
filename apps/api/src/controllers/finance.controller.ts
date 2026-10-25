@@ -36,7 +36,12 @@ export function computeLoanMetrics(req: Request, res: Response) {
       return res.status(400).json({ error: parse.error.errors[0].message });
     }
 
-    const result = calculateLoan(parse.data);
+    const result = calculateLoan({
+      propertyPrice: parse.data.propertyPrice,
+      downPaymentPercent: parse.data.downPaymentPercent,
+      annualInterestRate: parse.data.annualInterestRate,
+      tenureYears: parse.data.tenureYears,
+    });
     const rbiLimits = calculateRbiLtvLimits(parse.data.propertyPrice);
 
     return res.status(200).json({
