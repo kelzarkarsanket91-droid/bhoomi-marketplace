@@ -65,23 +65,24 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   res.status(status).json({ error: message });
 });
 
-// Server startup
-const server = app.listen(config.port, () => {
-  console.log(`[Bhoomi API] Server active on port ${config.port} in ${config.env} mode`);
-  console.log(`[Bhoomi API] Health endpoint: http://localhost:${config.port}/api/v1/health`);
-});
-
-// Graceful shutdown
-const shutdown = async () => {
-  console.log('[Bhoomi API] Initiating graceful shutdown...');
-  server.close(async () => {
-    await prisma.$disconnect();
-    console.log('[Bhoomi API] Database disconnected. Process exiting.');
-    process.exit(0);
+// Server startup (only start standalone HTTP listener when not in Vercel serverless runtime)
+if (process.env.VERCEL !== '1' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  const server = app.listen(config.port, () => {
+    console.log(`[Bhoomi API] Server active on port ${config.port} in ${config.env} mode`);
+    console.log(`[Bhoomi API] Health endpoint: http://localhost:${config.port}/api/v1/health`);
   });
-};
 
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+  const shutdown = async () => {
+    console.log('[Bhoomi API] Initiating graceful shutdown...');
+    server.close(async () => {
+      await prisma.$disconnect();
+      console.log('[Bhoomi API] Database disconnected. Process exiting.');
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+}
 
 export default app;
