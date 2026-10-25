@@ -64,10 +64,10 @@ export function HomePage() {
   };
 
   const propertyTypes = [
-    { id: 'PLOT', name: t.plots, desc: 'NIT / NMRDA & NA Layouts', count: '14+ Available', icon: Layers },
-    { id: 'FLAT', name: t.flats, desc: '1, 2, 3, 4 BHK Apartments', count: '18+ Available', icon: Building2 },
-    { id: 'BUNGALOW', name: t.bungalows, desc: 'Independent Duplex Homes', count: '8+ Available', icon: Home },
-    { id: 'VILLA', name: t.villas, desc: 'Gated Luxury Living', count: '6+ Available', icon: Sparkles },
+    { id: 'PLOT', name: t.plots, desc: 'NIT / NMRDA & NA Layouts', count: '12 Available', icon: Layers },
+    { id: 'FLAT', name: t.flats, desc: '1, 2, 3, 4 BHK Apartments', count: '12 Available', icon: Building2 },
+    { id: 'BUNGALOW', name: t.bungalows, desc: 'Independent Duplex Homes', count: '10 Available', icon: Home },
+    { id: 'VILLA', name: t.villas, desc: 'Gated Luxury Living', count: '8 Available', icon: Sparkles },
   ];
 
   return (

@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import { apiFetch } from '../lib/api.js';
 import { PropertyCard } from '../components/property/PropertyCard.js';
@@ -123,6 +124,34 @@ export function SearchPage() {
           >
             <SlidersHorizontal className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Horizontal Category Quick Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-1">
+          {[
+            { id: '', label: 'All Categories', icon: Building2 },
+            { id: 'PLOT', label: '🌾 Plots & Land', icon: Layers },
+            { id: 'FLAT', label: '🏢 Flats & Apartments', icon: Building2 },
+            { id: 'BUNGALOW', label: '🏡 Bungalows & Houses', icon: Home },
+            { id: 'VILLA', label: '🏰 Luxury Villas', icon: Sparkles },
+          ].map((cat) => {
+            const Icon = cat.icon;
+            const isActive = propertyType === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => updateFilter('propertyType', cat.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all duration-200 ${
+                  isActive
+                    ? 'bg-brand-700 text-white shadow-md shadow-brand-700/20 ring-2 ring-brand-700/50'
+                    : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-brand-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
